@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OP Bill / Cash Receipt</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="toolbar">
+    <button id="saveBtn" disabled>Save</button>
+    <button id="printBtn" onclick="window.print()" disabled>Print</button>
+  </div>
+  <div class="page">
+    <header>
+      <div class="brand">
+        <h1>MEDICUS HOSPITALS</h1>
+        <div class="sub"><strong>(LAPAROSCOPY & FERTILITY CENTER)</strong></div>
+        <div class="sub">Sai Ram Nagar colony, Plot no 83, Kanchi Gachibowli Rd, opp.<br>Navodaya Vidyalaya, Tellapur, Nallagandla, Hyderabad, Telangana 500046</div>
+        <div class="sub">Contact: 8328589321</div>
+      </div>
+      
+    </header>
+
+    <h2 class="title">OP BILL CUM RECEIPT</h2>
+
+    <section class="grid grid-4">
+      <div class="field"><label>Patient Name</label><input id="patientName" data-required="true" /></div>
+      <div class="field"><label>Age</label><input id="age" /></div>
+      <div class="field"><label>Sex</label>
+        <select id="sex" data-required="true" style="width:100%; padding: 6px; border: 1px solid #bbb; border-radius: 4px; font-size: var(--fs);">
+          <option value="">Select</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+        </select>
+      </div>
+      <div class="field"><label>Phone Number</label><input id="phone" data-required="true" inputmode="numeric" pattern="\\d{10}" minlength="10" maxlength="10" /></div>
+
+      <div class="field full"><label>Address</label><input /></div>
+
+      <div class="field"><label>Bill Date</label><input id="billDate" type="date" data-required="true" /></div>
+      <div class="field"><label>MR Number</label><input id="mrNumber" /></div>
+      <div class="field"><label>Bill No</label><input id="billNo" /></div>
+      <div class="field"><label>Doctor</label><input id="doctor" value="DR. ANITA KANALA" style="text-transform: uppercase;" readonly /></div>
+    </section>
+
+    <section>
+      <label class="muted">PARTICULARS</label>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:6ch">S.No</th>
+            <th>Particulars</th>
+            <th style="width:22ch">Amount (₹)</th>
+          </tr>
+        </thead>
+        <tbody id="itemsBody">
+          <tr>
+            <td>1</td>
+            <td><input id="part1" data-required="true" style="width:100%" /></td>
+            <td><input id="amt1" data-required="true" style="width:100%" inputmode="decimal" /></td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td><input id="part2" style="width:100%" /></td>
+            <td><input id="amt2" style="width:100%" inputmode="decimal" /></td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td><input id="part3" style="width:100%" /></td>
+            <td><input id="amt3" style="width:100%" inputmode="decimal" /></td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td><input id="part4" style="width:100%" /></td>
+            <td><input id="amt4" style="width:100%" inputmode="decimal" /></td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2" style="text-align:right">Subtotal (₹)</td>
+            <td><input id="subtotal" style="width:100%" readonly /></td>
+          </tr>
+          <tr>
+            <td colspan="2" style="text-align:right">Discount (₹)</td>
+            <td><input id="discount" style="width:100%" inputmode="decimal" /></td>
+          </tr>
+          <tr>
+            <td colspan="2" style="text-align:right">Total Paid (₹)</td>
+            <td><input id="totalPaid" style="width:100%" readonly /></td>
+          </tr>
+        </tfoot>
+      </table>
+    </section>
+
+    <section class="notes">
+      <div>
+        <label>Amount in words</label>
+        <input id="amountWords" readonly />
+        <div style="height:10px"></div>
+        <label>Payment mode</label>
+        <select id="paymentMode" data-required="true" style="width:100%; padding: 6px; border: 1px solid #bbb; border-radius: 4px; font-size: var(--fs);">
+          <option value="">Select</option>
+          <option value="Cash">Cash</option>
+          <option value="Online">Online</option>
+          <option value="Card">Card</option>
+          <option value="UPI">UPI</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div>
+        <label>Signature</label>
+        <div class="signature"></div>
+      </div>
+    </section>
+
+    <div class="muted" style="margin-top:14px">
+      Note: This is a system-generated receipt for OP services.
+    </div>
+  </div>
+  <div id="printView" class="print-view"></div>
+  <script>
+    (function() {
+      const page = document.querySelector('.page');
+      const printBtn = document.getElementById('printBtn');
+      const saveBtn = document.getElementById('saveBtn');
+      const requiredFields = page.querySelectorAll('[data-required="true"]');
+
+      const amountInputs = ['amt1','amt2','amt3','amt4'].map(id => document.getElementById(id));
+      const discountInput = document.getElementById('discount');
+      const subtotalInput = document.getElementById('subtotal');
+      const totalPaidInput = document.getElementById('totalPaid');
+      const amountWordsInput = document.getElementById('amountWords');
+      const phoneInput = document.getElementById('phone');
+
+      function digitsOnly(value) { return value.replace(/[^0-9]/g, ''); }
+      function numeric(value) { return value.replace(/[^0-9.]/g, ''); }
+      function parseMoney(val) {
+        const n = parseFloat(val);
+        return isNaN(n) ? 0 : n;
+      }
+
+      function toIndianWords(num) {
+        num = Math.round(num);
+        if (num === 0) return 'Zero Rupees';
+        const belowTwenty = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+        const tens = ['','Ten','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+        function twoDigits(n){
+          if (n < 20) return belowTwenty[n];
+          const t = Math.floor(n/10), u = n%10;
+          return tens[t] + (u? ' ' + belowTwenty[u] : '');
+        }
+        function threeDigits(n){
+          const h = Math.floor(n/100), r = n%100;
+          return (h? belowTwenty[h] + ' Hundred' + (r? ' ' : '') : '') + (r? twoDigits(r):'');
+        }
+        let words = '';
+        const crore = Math.floor(num / 10000000); num %= 10000000;
+        const lakh = Math.floor(num / 100000); num %= 100000;
+        const thousand = Math.floor(num / 1000); num %= 1000;
+        const hundred = num;
+        if (crore) words += threeDigits(crore) + ' Crore ';
+        if (lakh) words += threeDigits(lakh) + ' Lakh ';
+        if (thousand) words += twoDigits(thousand) + ' Thousand ';
+        if (hundred) words += threeDigits(hundred);
+        return words.trim() + ' Rupees';
+      }
+
+      function recalcSubtotal() {
+        const sum = amountInputs.reduce((acc, el) => acc + parseMoney(el.value), 0);
+        subtotalInput.value = sum.toFixed(2);
+      }
+
+      function recalcTotal() {
+        const subtotal = parseMoney(subtotalInput.value);
+        const discount = parseMoney(discountInput.value);
+        const total = Math.max(0, subtotal - discount);
+        totalPaidInput.value = total.toFixed(2);
+        amountWordsInput.value = toIndianWords(total);
+      }
+
+      function updatePrintButton() {
+        let shouldDisable = false;
+        for (const el of requiredFields) {
+          if (el.disabled) continue;
+          const val = (el.value || '').trim();
+          if (!val) { shouldDisable = true; break; }
+        }
+        if (printBtn) printBtn.disabled = shouldDisable;
+        if (saveBtn) saveBtn.disabled = shouldDisable;
+      }
+
+      function saveEntry() {
+        const name = (document.getElementById('patientName')?.value || '').trim();
+        const phone = (document.getElementById('phone')?.value || '').trim();
+        const billDateEl = document.getElementById('billDate');
+        const iso = (billDateEl?.value || '').trim();
+        const dateText = iso ? (iso.split('-').reverse().join('-')) : '';
+        if (!name || phone.length !== 10) {
+          alert('Please enter Name and a valid 10-digit Phone.');
+          return;
+        }
+        const key = 'op_day_entries';
+        const raw = localStorage.getItem(key);
+        const list = raw ? JSON.parse(raw) : [];
+        list.push({ name: name, phone: phone, date: dateText, ts: Date.now() });
+        localStorage.setItem(key, JSON.stringify(list));
+        window.open('Day_op.html', '_blank');
+      }
+
+      function getVal(id){ return (document.getElementById(id)?.value || '').trim(); }
+      function getSex(){ return (document.getElementById('sex')?.value || '').trim(); }
+
+      function renderPrintPage() {
+        const p = document.getElementById('printView');
+        if (!p) return;
+        const dIso = getVal('billDate');
+        const dText = dIso ? dIso.split('-').reverse().join('-') : '';
+        const rowsHtml = (function(){
+          const amounts = [getVal('amt1'), getVal('amt2'), getVal('amt3'), getVal('amt4')];
+          const parts = [getVal('part1'), getVal('part2'), getVal('part3'), getVal('part4')];
+          let html = '';
+          for (let i=0;i<4;i++){
+            if (!parts[i] && !amounts[i]) continue;
+            html += '<tr><td>'+ (parts[i]||'') +'</td><td style="text-align:right">'+ (amounts[i]||'') +'</td></tr>';
+          }
+          if (!html) html = '<tr><td>PROCEDURES CHARGES</td><td style="text-align:right">'+ (getVal('amt1')||'') +'</td></tr>';
+          return html;
+        })();
+
+        const subtotal = getVal('subtotal');
+        const discount = getVal('discount');
+        const total = getVal('totalPaid');
+        const amountWords = getVal('amountWords');
+
+        function receiptHtml(copyLabel){
+          return (
+            '<div class="print-page">'
+            + '<div class="p-header">'
+            +   '<h1>MEDICUS HOSPITALS</h1>'
+            +   '<div class="sub"><strong>(LAPAROSCOPY & FERTILITY CENTER)</strong></div>'
+            +   '<div class="sub">Sai Ram Nagar colony, Plot no 83, Kanchi Gachibowli Rd, opp.<br>Navodaya Vidyalaya, Tellapur, Nallagandla, Hyderabad, Telangana 500046</div>'
+            +   '<div class="sub">Contact: 8328589321</div>'
+            + '</div>'
+            + '<div class="p-title">OP BILL CUM RECEIPT ' + (copyLabel? (' - ' + copyLabel) : '') + '</div>'
+            + '<table class="p-grid">'
+            +   '<tr>'
+            +     '<td class="label">Patient Name</td><td class="val">: ' + getVal('patientName') + '</td>'
+            +     '<td class="label">MR Number</td><td class="val">: ' + getVal('mrNumber') + '</td>'
+            +   '</tr>'
+            +   '<tr>'
+            +     '<td class="label">Age / Sex</td><td class="val">: ' + (getVal('age')||'') + (getSex()? (' / ' + getSex()) : '') + '</td>'
+            +     '<td class="label">Bill Date</td><td class="val">: ' + dText + '</td>'
+            +   '</tr>'
+            +   '<tr>'
+            +     '<td class="label">Phone Number</td><td class="val">: ' + getVal('phone') + '</td>'
+            +     '<td class="label">Bill No</td><td class="val">: ' + getVal('billNo') + '</td>'
+            +   '</tr>'
+            +   '<tr>'
+            +     '<td class="label">Address</td><td class="val">: ' + '' + '</td>'
+            +     '<td class="label">Doctor</td><td class="val">: ' + getVal('doctor') + '</td>'
+            +   '</tr>'
+            + '</table>'
+            + '<table class="p-table">'
+            +   '<thead><tr><th>PARTICULARS</th><th style="width:22ch">AMOUNT</th></tr></thead>'
+            +   '<tbody>' + rowsHtml + '</tbody>'
+            +   '<tfoot>'
+            +     '<tr><td style="text-align:right">Subtotal (₹)</td><td style="text-align:right">' + subtotal + '</td></tr>'
+            +     '<tr><td style="text-align:right">Discount (₹)</td><td style="text-align:right">' + (discount||'0.00') + '</td></tr>'
+            +     '<tr><td style="text-align:right; font-weight:700">Total Paid (₹)</td><td style="text-align:right; font-weight:700">' + total + '</td></tr>'
+            +   '</tfoot>'
+            + '</table>'
+            + '<div class="p-footer">'
+            +   '<div>'
+            +     '<div>Amount in words : ' + amountWords + '</div>'
+            +     '<div style="margin-top:8px">Payment mode : ' + (document.getElementById('paymentMode')?.value || '') + '</div>'
+            +   '</div>'
+            +   '<div>'
+            +     '<div style="text-align:right; font-weight:700">Total Paid : ' + total + '</div>'
+            +     '<div style="margin-top:12px">Signature</div>'
+            +     '<div class="p-sign"></div>'
+            +   '</div>'
+            + '</div>'
+            + '</div>'
+          );
+        }
+
+        p.innerHTML = receiptHtml('ORIGINAL') + receiptHtml('DUPLICATE');
+      }
+
+      if (printBtn) {
+        printBtn.addEventListener('click', function(){
+          renderPrintPage();
+          setTimeout(function(){ window.print(); }, 10);
+        });
+      }
+
+      // Input sanitizers
+      if (phoneInput) {
+        phoneInput.addEventListener('input', function(){
+          const before = this.value;
+          this.value = digitsOnly(this.value).slice(0, 10);
+          if (before !== this.value) updatePrintButton();
+        });
+      }
+      [...amountInputs, discountInput].forEach(function(el){
+        if (!el) return;
+        el.addEventListener('input', function(){
+          const caret = this.selectionStart;
+          const cleaned = numeric(this.value);
+          if (this.value !== cleaned) this.value = cleaned;
+          recalcSubtotal();
+          recalcTotal();
+        });
+        el.addEventListener('change', function(){
+          this.value = numeric(this.value);
+          recalcSubtotal();
+          recalcTotal();
+        });
+      });
+
+      // Set current date into Bill Date field by default
+      (function setDefaultBillDate(){
+        const el = document.getElementById('billDate');
+        if (!el) return;
+        if (!el.value) {
+          const d = new Date();
+          const dd = String(d.getDate()).padStart(2,'0');
+          const mm = String(d.getMonth()+1).padStart(2,'0');
+          const yyyy = d.getFullYear();
+          el.value = `${yyyy}-${mm}-${dd}`;
+        }
+      })();
+
+      // Recalculate when any amount field changes initially
+      recalcSubtotal();
+      recalcTotal();
+
+      // Required fields listeners
+      requiredFields.forEach(function(el){
+        el.addEventListener('input', updatePrintButton);
+        el.addEventListener('change', updatePrintButton);
+      });
+
+      updatePrintButton();
+
+      if (saveBtn) {
+        saveBtn.addEventListener('click', saveEntry);
+      }
+    })();
+  </script>
+</body>
+</html>
