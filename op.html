@@ -7,15 +7,32 @@
 <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="toolbar">
-    <button id="saveBtn" disabled>Save</button>
-    <button id="printBtn" onclick="window.print()" disabled>Print</button>
+  <div id="login" style="max-width:420px; margin:40px auto; padding:16px; border:1px solid #ddd; border-radius:8px; display:none">
+    <div style="text-align:center; margin-bottom:12px">
+      <img src="https://medicushospital.in/wp-content/uploads/2024/08/Untitled-design-5.png" alt="Logo" style="height:56px" />
+      <div style="font-size:18px; font-weight:700; margin-top:8px">Sign in</div>
+    </div>
+    <div class="field"><label>Username</label><input id="loginUser" autocomplete="username" /></div>
+    <div class="field"><label>Password</label><input id="loginPass" type="password" autocomplete="current-password" /></div>
+    <div style="display:flex; gap:8px; margin-top:8px; align-items:center; justify-content:space-between">
+      <button id="loginBtn">Login</button>
+      <div id="loginErr" class="muted" style="color:#b00020; min-height:1.2em"></div>
+    </div>
   </div>
-  <div class="page">
+
+  <div class="toolbar" id="appToolbar" style="display:none">
+    <button id="saveBtn" disabled>Save</button>
+    <button id="printBtn" disabled>Print</button>
+    <button id="clearBtn" style="margin-left:8px">Clear</button>
+    <button id="dayOpBtn" style="margin-left:8px">Day OP</button>
+    <span style="flex:1"></span>
+    <button id="logoutBtn" style="background:#d32f2f; color:#fff; border:1px solid #b71c1c; border-radius:4px;">Logout</button>
+  </div>
+  <div class="page" id="appPage" style="display:none">
     <header>
       <div class="brand">
-        <h1>MEDICUS HOSPITALS</h1>
-        <div class="sub"><strong>(LAPAROSCOPY & FERTILITY CENTER)</strong></div>
+        <img src="https://medicushospital.in/wp-content/uploads/2024/08/Untitled-design-5.png" alt="Medicus Hospitals Logo" style="height:60px; margin-bottom:6px" />
+        
         <div class="sub">Sai Ram Nagar colony, Plot no 83, Kanchi Gachibowli Rd, opp.<br>Navodaya Vidyalaya, Tellapur, Nallagandla, Hyderabad, Telangana 500046</div>
         <div class="sub">Contact: 8328589321</div>
       </div>
@@ -25,6 +42,12 @@
     <h2 class="title">OP BILL CUM RECEIPT</h2>
 
     <section class="grid grid-4">
+      <div class="field"><label>Patient Type</label>
+        <select id="patientType" style="width:100%; padding: 6px; border: 1px solid #bbb; border-radius: 4px; font-size: var(--fs);">
+          <option value="new" selected>New</option>
+          <option value="existing">Existing</option>
+        </select>
+      </div>
       <div class="field"><label>Patient Name</label><input id="patientName" data-required="true" /></div>
       <div class="field"><label>Age</label><input id="age" /></div>
       <div class="field"><label>Sex</label>
@@ -36,16 +59,29 @@
       </div>
       <div class="field"><label>Phone Number</label><input id="phone" data-required="true" inputmode="numeric" pattern="\\d{10}" minlength="10" maxlength="10" /></div>
 
-      <div class="field full"><label>Address</label><input /></div>
+      <div class="field full"><label>Address</label><input id="address" /></div>
 
       <div class="field"><label>Bill Date</label><input id="billDate" type="date" data-required="true" /></div>
-      <div class="field"><label>MR Number</label><input id="mrNumber" /></div>
+      <div class="field"><label>MR Number</label>
+        <div style="display:flex; gap:6px">
+          <input id="mrNumber" style="flex:1" />
+          <button id="loadPatientBtn" title="Load Existing" style="display:none">Load</button>
+        </div>
+      </div>
       <div class="field"><label>Bill No</label><input id="billNo" /></div>
-      <div class="field"><label>Doctor</label><input id="doctor" value="DR. ANITA KANALA" style="text-transform: uppercase;" readonly /></div>
+      <div class="field"><label>Doctor</label>
+        <select id="doctor" data-required="true" style="width:100%; padding: 6px; border: 1px solid #bbb; border-radius: 4px; font-size: var(--fs); text-transform: uppercase;">
+          <option value="DR. ANITA KANALA" selected>DR. ANITA KANALA</option>
+          <option value="DR. ARUN KANALA">DR. ARUN KANALA</option>
+        </select>
+      </div>
     </section>
 
     <section>
-      <label class="muted">PARTICULARS</label>
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px">
+        <label class="muted" style="margin:0">PARTICULARS</label>
+        <button id="addRowBtn" style="margin-left:8px">Add Row</button>
+      </div>
       <table>
         <thead>
           <tr>
@@ -54,28 +90,7 @@
             <th style="width:22ch">Amount (₹)</th>
           </tr>
         </thead>
-        <tbody id="itemsBody">
-          <tr>
-            <td>1</td>
-            <td><input id="part1" data-required="true" style="width:100%" /></td>
-            <td><input id="amt1" data-required="true" style="width:100%" inputmode="decimal" /></td>
-          </tr>
-          <tr>
-            <td>2</td>
-            <td><input id="part2" style="width:100%" /></td>
-            <td><input id="amt2" style="width:100%" inputmode="decimal" /></td>
-          </tr>
-          <tr>
-            <td>3</td>
-            <td><input id="part3" style="width:100%" /></td>
-            <td><input id="amt3" style="width:100%" inputmode="decimal" /></td>
-          </tr>
-          <tr>
-            <td>4</td>
-            <td><input id="part4" style="width:100%" /></td>
-            <td><input id="amt4" style="width:100%" inputmode="decimal" /></td>
-          </tr>
-        </tbody>
+        <tbody id="itemsBody"></tbody>
         <tfoot>
           <tr>
             <td colspan="2" style="text-align:right">Subtotal (₹)</td>
@@ -109,8 +124,8 @@
         </select>
       </div>
       <div>
-        <label>Signature</label>
-        <div class="signature"></div>
+        <label style="display:block; text-align:center">Signature</label>
+        <div class="signature" style="display:flex; align-items:center; justify-content:center; color:#777; font-size:12px;"></div>
       </div>
     </section>
 
@@ -124,14 +139,60 @@
       const page = document.querySelector('.page');
       const printBtn = document.getElementById('printBtn');
       const saveBtn = document.getElementById('saveBtn');
+      const appToolbar = document.getElementById('appToolbar');
+      const appPage = document.getElementById('appPage');
+      const loginView = document.getElementById('login');
+      const loginBtn = document.getElementById('loginBtn');
+      const loginUser = document.getElementById('loginUser');
+      const loginPass = document.getElementById('loginPass');
+      const loginErr = document.getElementById('loginErr');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const dayOpBtn = document.getElementById('dayOpBtn');
       const requiredFields = page.querySelectorAll('[data-required="true"]');
 
-      const amountInputs = ['amt1','amt2','amt3','amt4'].map(id => document.getElementById(id));
+      // Dynamic rows state
+      const itemsBody = document.getElementById('itemsBody');
+      const addRowBtn = document.getElementById('addRowBtn');
+      const amountInputs = [];
+      function createRow(index, partValue, amtValue) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = '<td>'+ index +'</td>'
+          + '<td><input class="part" style="width:100%" ' + (index===1? 'data-required="true" ' : '') + 'value="'+ (partValue||'') +'" /></td>'
+          + '<td><input class="amt" style="width:100%" inputmode="decimal" ' + (index===1? 'data-required="true" ' : '') + 'value="'+ (amtValue||'') +'" /></td>';
+        itemsBody.appendChild(tr);
+        const amtEl = tr.querySelector('.amt');
+        amountInputs.push(amtEl);
+        // Wire listeners like static fields used to have
+        [amtEl].forEach(function(el){
+          el.addEventListener('input', function(){
+            const cleaned = numeric(this.value);
+            if (this.value !== cleaned) this.value = cleaned;
+            recalcSubtotal();
+            recalcTotal();
+          });
+          el.addEventListener('change', function(){
+            this.value = numeric(this.value);
+            recalcSubtotal();
+            recalcTotal();
+          });
+        });
+        return tr;
+      }
+
+      function renumberRows() {
+        const rows = itemsBody.querySelectorAll('tr');
+        rows.forEach(function(tr, i){ tr.firstChild.textContent = String(i+1); });
+      }
       const discountInput = document.getElementById('discount');
       const subtotalInput = document.getElementById('subtotal');
       const totalPaidInput = document.getElementById('totalPaid');
       const amountWordsInput = document.getElementById('amountWords');
       const phoneInput = document.getElementById('phone');
+      const clearBtn = document.getElementById('clearBtn');
+      const patientType = document.getElementById('patientType');
+      const mrNumber = document.getElementById('mrNumber');
+      const loadPatientBtn = document.getElementById('loadPatientBtn');
+      const addressInput = document.getElementById('address');
 
       function digitsOnly(value) { return value.replace(/[^0-9]/g, ''); }
       function numeric(value) { return value.replace(/[^0-9.]/g, ''); }
@@ -167,7 +228,7 @@
       }
 
       function recalcSubtotal() {
-        const sum = amountInputs.reduce((acc, el) => acc + parseMoney(el.value), 0);
+        const sum = amountInputs.reduce((acc, el) => acc + parseMoney(el?.value || ''), 0);
         subtotalInput.value = sum.toFixed(2);
       }
 
@@ -179,6 +240,53 @@
         amountWordsInput.value = toIndianWords(total);
       }
 
+      function clearForm() {
+        const pageEl = document.querySelector('.page');
+        if (!pageEl) return;
+
+        // Clear all inputs (except bill date, which we reset to today)
+        const inputs = pageEl.querySelectorAll('input');
+        inputs.forEach(function(el){
+          if (el.id === 'billDate') return;
+          el.value = '';
+        });
+
+        // Reset all selects to first option (includes patientType, sex, doctor, paymentMode)
+        const selects = pageEl.querySelectorAll('select');
+        selects.forEach(function(el){ el.selectedIndex = 0; });
+
+        // Reset Bill Date to today
+        const billDateEl = document.getElementById('billDate');
+        if (billDateEl) {
+          const d = new Date();
+          const dd = String(d.getDate()).padStart(2,'0');
+          const mm = String(d.getMonth()+1).padStart(2,'0');
+          const yyyy = d.getFullYear();
+          billDateEl.value = `${yyyy}-${mm}-${dd}`;
+        }
+
+        // Reset particulars: remove all rows and recreate two empty rows
+        if (itemsBody) {
+          itemsBody.innerHTML = '';
+          amountInputs.length = 0;
+          createRow(1, '', '');
+          createRow(2, '', '');
+          renumberRows();
+        }
+
+        // Reset totals/words
+        subtotalInput.value = '0.00';
+        totalPaidInput.value = '0.00';
+        if (amountWordsInput) amountWordsInput.value = toIndianWords(0);
+
+        // Update UI dependent on patient type visibility
+        if (typeof updatePatientTypeUI === 'function') updatePatientTypeUI();
+
+        recalcSubtotal();
+        recalcTotal();
+        updatePrintButton();
+      }
+
       function updatePrintButton() {
         let shouldDisable = false;
         for (const el of requiredFields) {
@@ -188,6 +296,42 @@
         }
         if (printBtn) printBtn.disabled = shouldDisable;
         if (saveBtn) saveBtn.disabled = shouldDisable;
+      }
+
+      function showApp() {
+        if (loginView) loginView.style.display = 'none';
+        if (appToolbar) appToolbar.style.display = '';
+        if (appPage) appPage.style.display = '';
+        updatePrintButton();
+      }
+
+      function showLogin() {
+        if (loginView) loginView.style.display = '';
+        if (appToolbar) appToolbar.style.display = 'none';
+        if (appPage) appPage.style.display = 'none';
+      }
+
+      function handleLogin() {
+        const u = (loginUser?.value || '').trim();
+        const p = (loginPass?.value || '').trim();
+        if (!u || !p) {
+          if (loginErr) loginErr.textContent = 'Enter username and password';
+          return;
+        }
+        // Simple static credentials (can be changed as needed)
+        const ok = (u === 'medadmin' && p === 'anumedihos');
+        if (!ok) {
+          if (loginErr) loginErr.textContent = 'Invalid credentials';
+          return;
+        }
+        localStorage.setItem('op_logged_in', '1');
+        if (loginErr) loginErr.textContent = '';
+        showApp();
+      }
+
+      function handleLogout() {
+        localStorage.removeItem('op_logged_in');
+        showLogin();
       }
 
       function saveEntry() {
@@ -203,9 +347,34 @@
         const key = 'op_day_entries';
         const raw = localStorage.getItem(key);
         const list = raw ? JSON.parse(raw) : [];
-        list.push({ name: name, phone: phone, date: dateText, ts: Date.now() });
+        const entry = {
+          name: name,
+          phone: phone,
+          address: (document.getElementById('address')?.value || '').trim(),
+          date: dateText,
+          mrNumber: (document.getElementById('mrNumber')?.value || '').trim(),
+          billNo: (document.getElementById('billNo')?.value || '').trim(),
+          ts: Date.now()
+        };
+        list.push(entry);
         localStorage.setItem(key, JSON.stringify(list));
-        window.open('Day_op.html', '_blank');
+
+        // Persist patient profile by MR for Existing patient lookup
+        const mr = (mrNumber?.value || '').trim();
+        if (mr) {
+          const profileKey = 'op_patient_profiles';
+          const pRaw = localStorage.getItem(profileKey);
+          const profiles = pRaw ? JSON.parse(pRaw) : {};
+          profiles[mr] = {
+            mr: mr,
+            name: name,
+            age: (document.getElementById('age')?.value || '').trim(),
+            sex: (document.getElementById('sex')?.value || '').trim(),
+            phone: phone,
+            address: (addressInput?.value || '').trim()
+          };
+          localStorage.setItem(profileKey, JSON.stringify(profiles));
+        }
       }
 
       function getVal(id){ return (document.getElementById(id)?.value || '').trim(); }
@@ -217,14 +386,15 @@
         const dIso = getVal('billDate');
         const dText = dIso ? dIso.split('-').reverse().join('-') : '';
         const rowsHtml = (function(){
-          const amounts = [getVal('amt1'), getVal('amt2'), getVal('amt3'), getVal('amt4')];
-          const parts = [getVal('part1'), getVal('part2'), getVal('part3'), getVal('part4')];
           let html = '';
-          for (let i=0;i<4;i++){
-            if (!parts[i] && !amounts[i]) continue;
-            html += '<tr><td>'+ (parts[i]||'') +'</td><td style="text-align:right">'+ (amounts[i]||'') +'</td></tr>';
-          }
-          if (!html) html = '<tr><td>PROCEDURES CHARGES</td><td style="text-align:right">'+ (getVal('amt1')||'') +'</td></tr>';
+          const rows = itemsBody.querySelectorAll('tr');
+          rows.forEach(function(tr){
+            const part = tr.querySelector('.part')?.value || '';
+            const amt = tr.querySelector('.amt')?.value || '';
+            if (!part && !amt) return;
+            html += '<tr><td>' + part + '</td><td style="text-align:right">' + amt + '</td></tr>';
+          });
+          if (!html) html = '<tr><td>PROCEDURES CHARGES</td><td style="text-align:right"></td></tr>';
           return html;
         })();
 
@@ -237,12 +407,13 @@
           return (
             '<div class="print-page">'
             + '<div class="p-header">'
-            +   '<h1>MEDICUS HOSPITALS</h1>'
-            +   '<div class="sub"><strong>(LAPAROSCOPY & FERTILITY CENTER)</strong></div>'
+            +   '<img src="https://medicushospital.in/wp-content/uploads/2024/08/Untitled-design-5.png" alt="Medicus Hospitals Logo" style="height:60px; margin-bottom:6px" />'
+            +   ''
+            +   ''
             +   '<div class="sub">Sai Ram Nagar colony, Plot no 83, Kanchi Gachibowli Rd, opp.<br>Navodaya Vidyalaya, Tellapur, Nallagandla, Hyderabad, Telangana 500046</div>'
             +   '<div class="sub">Contact: 8328589321</div>'
             + '</div>'
-            + '<div class="p-title">OP BILL CUM RECEIPT ' + (copyLabel? (' - ' + copyLabel) : '') + '</div>'
+            + '<div class="p-title">OP BILL CUM RECEIPT</div>'
             + '<table class="p-grid">'
             +   '<tr>'
             +     '<td class="label">Patient Name</td><td class="val">: ' + getVal('patientName') + '</td>'
@@ -257,7 +428,7 @@
             +     '<td class="label">Bill No</td><td class="val">: ' + getVal('billNo') + '</td>'
             +   '</tr>'
             +   '<tr>'
-            +     '<td class="label">Address</td><td class="val">: ' + '' + '</td>'
+            +     '<td class="label">Address</td><td class="val">: ' + getVal('address') + '</td>'
             +     '<td class="label">Doctor</td><td class="val">: ' + getVal('doctor') + '</td>'
             +   '</tr>'
             + '</table>'
@@ -277,8 +448,7 @@
             +   '</div>'
             +   '<div>'
             +     '<div style="text-align:right; font-weight:700">Total Paid : ' + total + '</div>'
-            +     '<div style="margin-top:12px">Signature</div>'
-            +     '<div class="p-sign"></div>'
+            +     '<div class="p-sign" style="display:flex; align-items:center; justify-content:center; color:#777; font-size:12px; margin-top:12px">Signature</div>'
             +   '</div>'
             + '</div>'
             + '</div>'
@@ -332,6 +502,60 @@
         }
       })();
 
+      // Initialize particulars with two rows and wire Add Row
+      function ensureInitialRows() {
+        if (!itemsBody) return;
+        if (itemsBody.children.length === 0) {
+          createRow(1, '', '');
+          createRow(2, '', '');
+        }
+      }
+      ensureInitialRows();
+      if (addRowBtn) {
+        addRowBtn.addEventListener('click', function(){
+          const next = itemsBody.children.length + 1;
+          createRow(next, '', '');
+          renumberRows();
+          recalcSubtotal();
+          recalcTotal();
+        });
+      }
+
+      // Patient type toggle and MR load button visibility
+      function updatePatientTypeUI() {
+        const type = (patientType?.value || 'new');
+        if (loadPatientBtn) loadPatientBtn.style.display = (type === 'existing') ? '' : 'none';
+      }
+      if (patientType) {
+        patientType.addEventListener('change', updatePatientTypeUI);
+        updatePatientTypeUI();
+      }
+
+      // Load existing patient by MR
+      function loadPatientByMR() {
+        const mr = (mrNumber?.value || '').trim();
+        if (!mr) {
+          alert('Enter MR Number');
+          return;
+        }
+        const profileKey = 'op_patient_profiles';
+        const raw = localStorage.getItem(profileKey);
+        const profiles = raw ? JSON.parse(raw) : {};
+        const p = profiles[mr];
+        if (!p) {
+          alert('No patient found for MR: ' + mr);
+          return;
+        }
+        const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+        setVal('patientName', p.name);
+        setVal('age', p.age);
+        setVal('sex', p.sex);
+        setVal('phone', p.phone);
+        setVal('address', p.address);
+        updatePrintButton();
+      }
+      if (loadPatientBtn) loadPatientBtn.addEventListener('click', loadPatientByMR);
+
       // Recalculate when any amount field changes initially
       recalcSubtotal();
       recalcTotal();
@@ -342,10 +566,24 @@
         el.addEventListener('change', updatePrintButton);
       });
 
+      // Initial auth gate
+      if (localStorage.getItem('op_logged_in') === '1') {
+        showApp();
+      } else {
+        showLogin();
+      }
+
+      if (loginBtn) loginBtn.addEventListener('click', handleLogin);
+      if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
+      if (dayOpBtn) dayOpBtn.addEventListener('click', function(){ window.open('Day_op.html', '_blank'); });
+
       updatePrintButton();
 
       if (saveBtn) {
         saveBtn.addEventListener('click', saveEntry);
+      }
+      if (clearBtn) {
+        clearBtn.addEventListener('click', clearForm);
       }
     })();
   </script>
