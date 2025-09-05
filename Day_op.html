@@ -20,9 +20,12 @@
     <thead>
       <tr>
         <th style="width:5ch">#</th>
-        <th>Name</th>
-        <th style="width:16ch">Phone</th>
-        <th style="width:16ch">Date</th>
+        <th>Patient Name</th>
+        <th style="width:16ch">Phone Number</th>
+        <th>Address</th>
+        <th style="width:16ch">Bill Date</th>
+        <th style="width:14ch">MR Number</th>
+        <th style="width:12ch">Bill No</th>
       </tr>
     </thead>
     <tbody id="rows"></tbody>
@@ -43,7 +46,10 @@
             tr.innerHTML = '<td>'+ (idx+1) +'</td>'+
                            '<td>'+ escapeHtml(it.name) +'</td>'+
                            '<td>'+ escapeHtml(it.phone) +'</td>'+
-                           '<td>'+ escapeHtml(it.date) +'</td>';
+                           '<td>'+ escapeHtml(it.address) +'</td>'+
+                           '<td>'+ escapeHtml(it.date) +'</td>'+
+                           '<td>'+ escapeHtml(it.mrNumber) +'</td>'+
+                           '<td>'+ escapeHtml(it.billNo) +'</td>';
             tbody.appendChild(tr);
           });
       }
